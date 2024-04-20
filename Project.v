@@ -1,6 +1,7 @@
-module adder (in, out,outing);
+module adder (in, out,og);
     input in;
-    output out,outing;
+    output out,og;
     assign out = in;
-    assign outing = in;
+    assign og = in;
+    //trying commits
 endmodule
