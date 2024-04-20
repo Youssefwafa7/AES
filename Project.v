@@ -1,5 +1,6 @@
-module adder (in, out);
+module adder (in, out,outing);
     input in;
-    output out;
+    output out,outing;
     assign out = in;
+    assign outing = in;
 endmodule
