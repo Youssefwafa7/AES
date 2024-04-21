@@ -23,7 +23,9 @@ endfunction
 
 genvar i;
 
-for(i=0;i< 4;i=i+1) begin
+generate
+
+for(i=0;i< 4;i=i+1) begin : m_col
 
 assign state_out[i*32+:8]= mul02(state_in[i*32+:8]) ^ mul03(state_in[(i*32 + 8)+:8]) ^ state_in[(i*32 + 16)+:8] ^ state_in[(i*32 + 24)+:8];
 assign state_out[(i*32 + 8)+:8]= state_in[i*32+:8] ^ mul02(state_in[(i*32 + 8)+:8]) ^ mul03(state_in[(i*32 + 16)+:8]) ^ state_in[(i*32 + 24)+:8];
@@ -32,5 +34,6 @@ assign state_out[(i*32 + 24)+:8]= mul03(state_in[i*32+:8]) ^ state_in[(i*32 + 8)
 
 end
 
+endgenerate
 
 endmodule
