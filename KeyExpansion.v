@@ -34,7 +34,9 @@ endmodule
 module g (input [31:0] x, input integer rconi, output [31:0] out);
       wire [31:0] shiftedx = {x[23:0], x[31:24]};
       wire [31:0] rconx;
+      //wire [31:0] subx;
+      //SubBytes(shiftedx , subx)
       getrcon r1 (rconi , rconx);
-      assign out = shiftedx ^ rconx;
+      //assign out = subx ^ rconx;
 endmodule
 
