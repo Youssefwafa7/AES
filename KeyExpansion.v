@@ -44,7 +44,7 @@ module g (input [31:0] x, input integer rconi, output [31:0] out);
       function [7:0] c(input [7:0] a);  
         begin
           case (a)
-            8'h00: c=8'h63;
+		   8'h00: c=8'h63;
       	   8'h01: c=8'h7c;
       	   8'h02: c=8'h77;
       	   8'h03: c=8'h7b;
