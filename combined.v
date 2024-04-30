@@ -1,42 +1,78 @@
 
-module main (output [127 : 0] out);
+module main (input clk,output [127 : 0] out);
     wire [127:0] in = 128'h00112233445566778899aabbccddeeff;
     wire [127:0] key = 128'h000102030405060708090a0b0c0d0e0f;
     wire [1407:0] words;
-    wire [127:0] out1;
+    wire [127:0] out188;
     KeyExpansion k1 (key,words);
-    Cipher c1 (in,words,out1);
-    assign out=out1;
+    Cipher c1 (in,words,clk,out188);
+    assign out=out188;
 endmodule
 
-module Cipher(input [127 : 0] in, output [127 : 0] out, input w[1407 : 0]);
-    wire [127 : 0] state = in;
-    wire [127 : 0] out1;
-    AddRoundKey k1 (state, w[1407 : 1280], out1);
+module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [127 : 0] out7);
+   	wire [127 : 0] out1;
+    wire [127 : 0] sub;
+    wire [127 : 0] shift;
+    wire [127 : 0] mix;
+    //wire [127 : 0] out2;
+   // wire [127 : 0] out9;
+    integer i=1;
+	reg [1407:0] states;
+    wire [127 : 0] plzdontfuckme;
 
-    genvar i;
-    generate
-        for( i = 1 ; i <= 9 ; i = i + 1 ) begin : cipher
-            wire [127 : 0] sub;
-            wire [127 : 0] shift;
-            wire [127 : 0] mix;
-            wire [127 : 0] out2;
-            SubBytes s1 (out1 , sub);
-            ShiftRows r1 (sub , shift);
-            MixColumns c1(shift , mix);
-            AddRoundKey k1 (mix, w[1407 - i*128 : 1407 - (i+1)*128 + 1], out2);
-        end
-    endgenerate
-    wire [127 : 0] sub2;
-    wire [127 : 0] shift2;
-    wire [127 : 0] out3;
-    SubBytes s2 (out2 , sub2);
-    ShiftRows r2 (sub , shift2);
-    AddRoundKey k2 (mix, w[1407 - i*128 : 1407 - (i+1)*128 + 1], out3);
-    assign out = out3;
+    AddRoundKey k2 (in, w[1407 : 1280], states[1407-:128]);
+	encryptRound e9 (states [1407-(i-1)*128-:128] ,w[1407-i*128-:128],plzdontfuckme);
+	SubBytes sb(states[1407-i*128-:128],sub);
+	ShiftRows sr(sub,shift);
+	AddRoundKey addrk2(shift,w[127:0],out1);
 
+	always @ (posedge clk) begin 
+	states[1407-(i+1)*128-:128]<=plzdontfuckme;
+		end
+	always @ (posedge clk) begin 
+		if(i<=9)begin
+			out7 <= states[1407-i*128-:128];
+			i<=i+1;
+		end
+		else if (i>9)begin
+			out7 <= out1;
+		end
+	end
 endmodule
 
+module encryptRound(in,key,out);
+input [127:0] in;
+output [127:0] out;
+input [127:0] key;
+wire [127:0] afterSubBytes;
+wire [127:0] keyout;
+wire [127:0] afterShiftRows;
+wire [127:0] afterMixColumns;
+wire [127:0] afterAddroundKey;
+
+SubBytes s(in,afterSubBytes);
+ShiftRows r(afterSubBytes,afterShiftRows);
+mixColumns m(afterShiftRows,afterMixColumns);
+AddRoundKey b(afterMixColumns,key,keyout);
+assign out = keyout;
+		
+endmodule
+//     genvar i;
+//     generate
+//         for( i = 1 ; i <= 9 ; i = i + 1 ) begin : cipher
+//             SubBytes s1 (states[i-1] , sub);
+//             ShiftRows r1 (sub , shift);
+//             mixColumns c2(shift , mix);
+//             AddRoundKey k77 (mix, w[1407-i*128-:128], states[i]);
+//         end
+//    endgenerate
+//      wire [127 : 0] sub2;
+//      wire [127 : 0] shift2;
+//    // wire [127 : 0] out3;
+//      SubBytes s2 (states[9] , sub2);
+//      ShiftRows r2 (sub2 , shift2);
+//      AddRoundKey k88 (shift2, w[127: 0], states[10]);
+//      assign out = states[10];
 
 module AddRoundKey(input [127:0] in,input[127:0] in2, output[127:0] out);
 assign out=in2^in;
@@ -79,17 +115,17 @@ module g (input [31:0] x, input [3:0] rconi, output [31:0] out);
     wire [31:0] rconx;
     wire [31:0] subx;
 
-    subword s1 (shiftedx , subx);
-    getrcon r1 (rconi , rconx);
+    subword s9 (shiftedx , subx);
+    getrcon r9 (rconi , rconx);
     assign out = subx ^ rconx;
 endmodule
 
  module subword(input [31:0] a , output [31:0] subwordx);
     wire [31:0] subwire;
-    sbox s1 (a[31:24], subwire[31:24]);
-    sbox s2 (a[23:16], subwire[23:16]);
-    sbox s3 (a[15:8] , subwire[15:8] );
-    sbox s4 (a[7:0]  , subwire[7:0]  );
+    sbox s155 (a[31:24], subwire[31:24]);
+    sbox s255 (a[23:16], subwire[23:16]);
+    sbox s355 (a[15:8] , subwire[15:8] );
+    sbox s455 (a[7:0]  , subwire[7:0]  );
     assign subwordx = subwire;
 endmodule
 //2b7e151628aed2a6abf7158809cf4f3c
@@ -438,7 +474,7 @@ genvar i;
 
 generate
   for(i=0;i<16;i=i+1)begin : sub_bytes
-    sbox s1(in[(i+1)*8-1:i*8],out[(i+1)*8-1:i*8]);
+    sbox s16969(in[(i+1)*8-1:i*8],out[(i+1)*8-1:i*8]);
     end
 endgenerate
 endmodule
