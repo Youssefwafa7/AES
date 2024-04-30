@@ -1,11 +1,11 @@
-module sbox(a,d);
+module sbox(in,out);
 
-input  [7:0] a;
-output [7:0]d;
+input  [7:0] in;
+output [7:0] out;
 reg [7:0] c;
      
    always @(a) begin
-    case (a) 
+    case (in) 
        8'h00: c=8'h63;
 	   8'h01: c=8'h7c;
 	   8'h02: c=8'h77;
@@ -265,5 +265,5 @@ reg [7:0] c;
        default: c = 8'h00;
     endcase
    end
-  assign d=c;
+  assign out=c;
 endmodule
