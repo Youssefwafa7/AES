@@ -949,7 +949,7 @@ endmodule
 module HexConverter (in, converted);
 	input [3:0] in;
 	output reg [6:0] converted;
-    always
+    always @(*)
         begin
 	       case(in)
             4'h0: converted[6:0] = 7'b0111111;
