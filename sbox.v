@@ -4,7 +4,7 @@ input  [7:0] in;
 output [7:0] out;
 reg [7:0] c;
      
-   always @(a) begin
+   always @(in) begin
     case (in) 
        8'h00: c=8'h63;
 	   8'h01: c=8'h7c;

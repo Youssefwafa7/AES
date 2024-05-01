@@ -14,36 +14,53 @@ module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [12
     wire [127 : 0] sub;
     wire [127 : 0] shift;
     integer i=-1;
-	reg [1407:0] states;
+	//reg [1407:0] states;
+	reg [127:0] currentstate;
     wire [127 : 0] midrounds;
 	wire [127:0] firstround;
     AddRoundKey addrk1 (in, w[1407 : 1280], firstround);
-	encryptRound er (states [1407-((i)*128)-:128] ,w[1407-((i+1)*128)-:128],midrounds);
-	SubBytes sb(states[255:128],sub);
+	encryptRound er (currentstate ,w[1407-((i+1)*128)-:128],midrounds);
+	SubBytes sb(currentstate,sub);
 	ShiftRows sr(sub,shift);
 	AddRoundKey addrk2(shift,w[127:0],finalround);
 
 
-	always @ (posedge clk) begin 
+	always @ (negedge clk) begin 
 		if(i<10)begin 
 				if(i==-1&& firstround !== 'bx)begin
-					states[1407-:128]<=firstround;
+					currentstate<=firstround;
 					finalout <= firstround;
 					i=i+1;
 				end
 				else if(i<=8&& midrounds !== 'bx)begin
-						states[1407-((i+1)*128)-:128]<=midrounds;
+						currentstate<=midrounds;
 						finalout <= midrounds;
 						i=i+1;
 					end 
 					else if(i==9&& midrounds !== 'bx)begin
-						states[127:0]<=midrounds;
 						finalout <= finalround;
 					end
 
 		end	
 	end
 endmodule
+module encryptRound(in,key,out);
+input [127:0] in;
+output [127:0] out;
+input [127:0] key;
+wire [127:0] afterSubBytes;
+wire [127:0] keyout;
+wire [127:0] afterShiftRows;
+wire [127:0] afterMixColumns;
+
+SubBytes s1(in,afterSubBytes);
+ShiftRows r1(afterSubBytes,afterShiftRows);
+mixColumns m32323(afterShiftRows,afterMixColumns);
+AddRoundKey k77(afterMixColumns,key,keyout);
+assign out = keyout;
+		
+endmodule
+
 module encryptRound(in,key,out);
 input [127:0] in;
 output [127:0] out;
@@ -114,8 +131,7 @@ endmodule
     sbox spart4 (a[7:0]  , subwire[7:0]  );
     assign subwordx = subwire;
 endmodule
-//2b7e151628aed2a6abf7158809cf4f3c
-//2b7e1516 28aed2a6 abf71588 09cf4f3c a0fafe17 88542cb1 23a33939 2a6c7605 f2c295f2 7a96b943 5935807a 7359f67f 3d80477d 4716fe3e 1e237e44 6d7a883b ef44a541 a8525b7f b671253b db0bad00 d4d1c6f8 7c839d87 caf2b8bc 11f915bc 6d88a37a 110b3efd dbf98641 ca0093fd 4e54f70e 5f5fc9f3 84a64fb2 4ea6dc4f ead27321 b58dbad2 312bf560 7f8d292f ac7766f3 19fadc21 28d12941 575c006e d014f9a8 c9ee2589 e13f0cc8 b6630ca6
+
 module mixColumns(state_in,state_out);
 
 input [0:127] state_in;
@@ -162,7 +178,7 @@ input  [7:0] in;
 output [7:0] out;
 reg [7:0] c;
      
-   always @(a) begin
+   always @(in) begin
     case (in) 
        8'h00: c=8'h63;
 	   8'h01: c=8'h7c;

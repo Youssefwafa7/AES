@@ -1,5 +1,5 @@
 
-module main (input clk,output [127 : 0] out);
+module maind (input clk,output [127 : 0] out);
     wire [127:0] in = 128'h69c4e0d86a7b0430d8cdb78070b4c55a;
     wire [127:0] key = 128'h000102030405060708090a0b0c0d0e0f;
     wire [1407:0] words;
@@ -14,36 +14,36 @@ module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [
     wire [127 : 0] sub;
     wire [127 : 0] shift;
     integer i=-1;
-	reg [1407:0] states;
+	reg [127:0] currentstate;
     wire [127 : 0] midrounds;
 	wire [127:0] firstround;
     AddRoundKey addrk3 (in, w[127 : 0], firstround);
-	decryptRound dr (states [1407-((i)*128)-:128] ,w[(((i+1)*128)-1)-:128],midrounds);
-	InvShiftRows isr(states[255:128],shift);
+	decryptRound dr (currentstate ,w[(((i+2)*128)-1)-:128],midrounds);
+	InvShiftRows isr(currentstate,shift);
 	invSubBytes isb(shift,sub);
 	AddRoundKey addrk4 (sub,w[1407:1280],finalround);
 
 
-	always @ (posedge clk) begin 
+	always @ (negedge clk) begin 
 		if(i<10)begin 
 				if(i==-1&& firstround !== 'bx)begin
-					states[1407-:128]<=firstround;
+					currentstate<=firstround;
 					finalout <= firstround;
 					i=i+1;
 				end
 				else if(i<=8&& midrounds !== 'bx)begin
-						states[1407-((i+1)*128)-:128]<=midrounds;
+						currentstate<=midrounds;
 						finalout <= midrounds;
 						i=i+1;
 					end 
 					else if(i==9&& midrounds !== 'bx)begin
-						states[127:0]<=midrounds;
 						finalout <= finalround;
 					end
 
 		end	
 	end
 endmodule
+
 module decryptRound(in,key,out);
 input [127:0] in;
 output [127:0] out;
@@ -59,6 +59,10 @@ AddRoundKey addkr5(afterSubBytes,key,keyout);
 inverseMixColumns im2(keyout,afterMixColumns);
 assign out = afterMixColumns;
 		
+endmodule
+
+module AddRoundKey(input [127:0] in,input[127:0] in2, output[127:0] out);
+    assign out=in2^in;
 endmodule
 
 module KeyExpansion(input [127 : 0] key , output [1407 : 0] word);
