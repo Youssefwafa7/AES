@@ -71,7 +71,7 @@ module KeyExpansion(input [127 : 0] key , output [1407 : 0] word);
 
   genvar i;
   generate
-	  for (i = 1; i <= 10; i = i + 1) begin :key
+    for (i = 1; i <= 10; i = i + 1) begin
       wire [31:0] G;
       g getG (word[1407 - (i-1)*128 - 96 : 1407 - (i-1)*128 - 127], i , G);
       assign word[1407 - i*128	    : 1407 - i*128 - 31 ] = word[1407 - (i-1)*128	   : 1407 - (i-1)*128 - 31 ] ^ G;
@@ -82,7 +82,7 @@ module KeyExpansion(input [127 : 0] key , output [1407 : 0] word);
   endgenerate
 endmodule
 
-module getrcon(input integer x, output [31:0] rcon);
+module getrcon(input [3:0] x, output [31:0] rcon);
     assign rcon = (x == 1)  ? 32'h01000000 :
                   (x == 2)  ? 32'h02000000 :
                   (x == 3)  ? 32'h04000000 :
@@ -96,7 +96,7 @@ module getrcon(input integer x, output [31:0] rcon);
                               32'h00000000;
 endmodule
 
-module g (input [31:0] x, input integer rconi, output [31:0] out);
+module g (input [31:0] x, input [3:0] rconi, output [31:0] out);
    
     wire [31:0] shiftedx = {x[23:0], x[31:24]};
     wire [31:0] rconx;
