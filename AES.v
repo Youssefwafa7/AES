@@ -1,42 +1,45 @@
 
-module AES (input clk,output reg [127 : 0] out , output [20:0] sevensegment);
+module aes (input clk,output reg [127 : 0] out );
     wire [127:0] in = 128'h00112233445566778899aabbccddeeff;
     wire [127:0] key = 128'h000102030405060708090a0b0c0d0e0f;
 	integer i = -1;
     wire [1407:0] words;
     wire [127:0] encrypted;
+	reg [127:0] decryptEnter;
     wire [127:0] decrypted;
     KeyExpansion k1 (key,words);
-    Cipher c1 (in,words,clk,i,encrypted);
-    DeCipher dc1 (encrypted,words,clk,i,decrypted);
+    Cipher c1 (in,words,clk,encrypted);
+    DeCipher dc1 (decryptEnter,words,clk,decrypted);
     always@(negedge clk) begin
-		if(i<21) begin
-        	if(i<10) begin
-        	     out <= encrypted;
+		if(i<22) begin
+        	if(i<11 ) begin
+        	     out = encrypted;
+				 if(i==9)
+				 	decryptEnter=encrypted;
         	end
         	else begin
-        	    out <= decrypted;
+        	    out = decrypted;
         	end
 			i = i + 1;
 		end
     end
-    wire [7:0] bin = out[7:0];
-    wire [11:0] bout;
-    binarytoBCD B2B(bin , bout);
-	wire [20:0]hexout;
-    HexConverter HC0(bout[3:0] , hexout[6:0]);
-    HexConverter HC1(bout[7:4] , hexout[13:7]);
-    HexConverter HC2(bout[11:8], hexout[20:14]);
-	assign sevensegment = hexout;
+    // wire [7:0] bin = out[7:0];
+    // wire [11:0] bout;
+    // binarytoBCD B2B(bin , bout);
+	// wire [20:0]hexout;
+    // HexConverter HC0(bout[3:0] , hexout[6:0]);
+    // HexConverter HC1(bout[7:4] , hexout[13:7]);
+    // HexConverter HC2(bout[11:8], hexout[20:14]);
 endmodule
 
-module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk , input [4:0] i,output reg [127 : 0] finalout);
+module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [127 : 0] finalout);
    	wire [127 : 0] finalround;
     wire [127 : 0] sub;
     wire [127 : 0] shift;
 	reg [127:0] currentState;
     wire [127 : 0] midrounds;
 	wire [127:0] firstround;
+    integer i=-1;
     AddRoundKey addrk1 (in, w[1407 : 1280], firstround);
 	encryptRound er (currentState ,w[1407-((i+1)*128)-:128],midrounds);
 	SubBytes sb(currentState,sub);
@@ -44,17 +47,17 @@ module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk , input [4:0] i
 	AddRoundKey addrk2(shift,w[127:0],finalround);
 
 
-	always @ (negedge clk) begin 
+	always @ (posedge clk) begin 
 		if(i<10)begin 
 				if(i==-1&& firstround !== 'bx)begin
 					currentState<=firstround;
-					finalout <= firstround;
-					//i=i+1;
+					finalout = firstround;
+					i=i+1;
 				end
 				else if(i<=8&& midrounds !== 'bx)begin
 						currentState<=midrounds;
 						finalout <= midrounds;
-						//i=i+1;
+						i=i+1;
 					end 
 					else if(i==9&& midrounds !== 'bx)begin
 						finalout <= finalround;
@@ -484,13 +487,14 @@ reg [7:0] c;
   assign out=c;
 endmodule
 
-module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk ,input [4:0] i ,output reg [127 : 0] finalout);
+module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk  ,output reg [127 : 0] finalout);
    	wire [127 : 0] finalround;
     wire [127 : 0] sub;
     wire [127 : 0] shift;
 	reg [127:0] currentstate;
     wire [127 : 0] midrounds;
 	wire [127:0] firstround;
+    integer i=-1;
     AddRoundKey addrk3 (in, w[127 : 0], firstround);
 	decryptRound dr (currentstate ,w[(((i+2)*128)-1)-:128],midrounds);
 	InvShiftRows isr(currentstate,shift);
@@ -503,12 +507,12 @@ module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk ,input [4:0] 
 				if(i==-1&& firstround !== 'bx)begin
 					currentstate<=firstround;
 					finalout <= firstround;
-					//i=i+1;
+					i=i+1;
 				end
 				else if(i<=8&& midrounds !== 'bx)begin
 						currentstate<=midrounds;
 						finalout <= midrounds;
-						//i=i+1;
+						i=i+1;
 					end 
 					else if(i==9&& midrounds !== 'bx)begin
 						finalout <= finalround;
