@@ -1,5 +1,5 @@
 
-module main (input clk,output [127 : 0] out);
+module main1 (input clk,output [127 : 0] out);
     wire [127:0] in = 128'h00112233445566778899aabbccddeeff;
     wire [127:0] key = 128'h000102030405060708090a0b0c0d0e0f;
     wire [1407:0] words;
@@ -14,13 +14,12 @@ module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [12
     wire [127 : 0] sub;
     wire [127 : 0] shift;
     integer i=-1;
-	//reg [1407:0] states;
-	reg [127:0] currentstate;
+	reg [127:0] currentState;
     wire [127 : 0] midrounds;
 	wire [127:0] firstround;
     AddRoundKey addrk1 (in, w[1407 : 1280], firstround);
-	encryptRound er (currentstate ,w[1407-((i+1)*128)-:128],midrounds);
-	SubBytes sb(currentstate,sub);
+	encryptRound er (currentState ,w[1407-((i+1)*128)-:128],midrounds);
+	SubBytes sb(currentState,sub);
 	ShiftRows sr(sub,shift);
 	AddRoundKey addrk2(shift,w[127:0],finalround);
 
@@ -28,12 +27,12 @@ module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [12
 	always @ (negedge clk) begin 
 		if(i<10)begin 
 				if(i==-1&& firstround !== 'bx)begin
-					currentstate<=firstround;
+					currentState<=firstround;
 					finalout <= firstround;
 					i=i+1;
 				end
 				else if(i<=8&& midrounds !== 'bx)begin
-						currentstate<=midrounds;
+						currentState<=midrounds;
 						finalout <= midrounds;
 						i=i+1;
 					end 
@@ -43,22 +42,6 @@ module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [12
 
 		end	
 	end
-endmodule
-module encryptRound(in,key,out);
-input [127:0] in;
-output [127:0] out;
-input [127:0] key;
-wire [127:0] afterSubBytes;
-wire [127:0] keyout;
-wire [127:0] afterShiftRows;
-wire [127:0] afterMixColumns;
-
-SubBytes s1(in,afterSubBytes);
-ShiftRows r1(afterSubBytes,afterShiftRows);
-mixColumns m32323(afterShiftRows,afterMixColumns);
-AddRoundKey k77(afterMixColumns,key,keyout);
-assign out = keyout;
-		
 endmodule
 
 module encryptRound(in,key,out);
@@ -79,7 +62,7 @@ assign out = keyout;
 endmodule
 
 module AddRoundKey(input [127:0] in,input[127:0] in2, output[127:0] out);
-    assign out=in2^in;
+assign out=in2^in;
 endmodule
 module KeyExpansion(input [127 : 0] key , output [1407 : 0] word);
  
@@ -87,7 +70,7 @@ module KeyExpansion(input [127 : 0] key , output [1407 : 0] word);
 
   genvar i;
   generate
-    for (i = 1; i <= 10; i = i + 1) begin
+    for (i = 1; i <= 10; i = i + 1) begin: Key
       wire [31:0] G;
       g getG (word[1407 - (i-1)*128 - 96 : 1407 - (i-1)*128 - 127], i , G);
       assign word[1407 - i*128	    : 1407 - i*128 - 31 ] = word[1407 - (i-1)*128	   : 1407 - (i-1)*128 - 31 ] ^ G;
@@ -98,7 +81,7 @@ module KeyExpansion(input [127 : 0] key , output [1407 : 0] word);
   endgenerate
 endmodule
 
-module getrcon(input integer x, output [31:0] rcon);
+module getrcon(input [3:0] x, output [31:0] rcon);
     assign rcon = (x == 1)  ? 32'h01000000 :
                   (x == 2)  ? 32'h02000000 :
                   (x == 3)  ? 32'h04000000 :
@@ -112,7 +95,7 @@ module getrcon(input integer x, output [31:0] rcon);
                               32'h00000000;
 endmodule
 
-module g (input [31:0] x, input integer rconi, output [31:0] out);
+module g (input [31:0] x, input [3:0] rconi, output [31:0] out);
    
     wire [31:0] shiftedx = {x[23:0], x[31:24]};
     wire [31:0] rconx;
@@ -172,6 +155,45 @@ endgenerate
 
 endmodule
 
+
+module ShiftRows(input  [0:127] state_in ,  output  [0:127] state_out );
+
+//first row
+assign state_out[0:7] = state_in[0:7];
+assign state_out[32:39] = state_in[32:39];
+assign state_out[64:71] = state_in[64:71];
+assign state_out[96:103] = state_in[96:103];
+
+//second row
+assign state_out[8:15] = state_in[40:47];
+assign state_out[40:47] = state_in[72:79];
+assign state_out[72:79] = state_in[104:111];
+assign state_out[104:111] = state_in[8:15];
+
+//third row
+assign state_out[16:23] = state_in[80:87];
+assign state_out[48:55] = state_in[112:119];
+assign state_out[80:87] = state_in[16:23];
+assign state_out[112:119] = state_in[48:55];
+
+//forth row
+assign state_out[24:31] = state_in[120:127];
+assign state_out[56:63] = state_in[24:31];
+assign state_out[88:95] = state_in[56:63];
+assign state_out[120:127] = state_in[88:95];
+
+endmodule
+
+module SubBytes(input [127:0] in , output [127:0] out);
+genvar i;
+
+generate
+  for(i=0;i<16;i=i+1)begin : sub_bytes
+    sbox s16969(in[(i+1)*8-1:i*8],out[(i+1)*8-1:i*8]);
+    end
+endgenerate
+endmodule
+	
 module sbox(in,out);
 
 input  [7:0] in;
@@ -441,42 +463,3 @@ reg [7:0] c;
    end
   assign out=c;
 endmodule
-
-module ShiftRows(input  [0:127] state_in ,  output  [0:127] state_out );
-
-//first row
-assign state_out[0:7] = state_in[0:7];
-assign state_out[32:39] = state_in[32:39];
-assign state_out[64:71] = state_in[64:71];
-assign state_out[96:103] = state_in[96:103];
-
-//second row
-assign state_out[8:15] = state_in[40:47];
-assign state_out[40:47] = state_in[72:79];
-assign state_out[72:79] = state_in[104:111];
-assign state_out[104:111] = state_in[8:15];
-
-//third row
-assign state_out[16:23] = state_in[80:87];
-assign state_out[48:55] = state_in[112:119];
-assign state_out[80:87] = state_in[16:23];
-assign state_out[112:119] = state_in[48:55];
-
-//forth row
-assign state_out[24:31] = state_in[120:127];
-assign state_out[56:63] = state_in[24:31];
-assign state_out[88:95] = state_in[56:63];
-assign state_out[120:127] = state_in[88:95];
-
-endmodule
-
-module SubBytes(input [127:0] in , output [127:0] out);
-genvar i;
-
-generate
-  for(i=0;i<16;i=i+1)begin : sub_bytes
-    sbox sb1(in[(i+1)*8-1:i*8],out[(i+1)*8-1:i*8]);
-    end
-endgenerate
-endmodule
-
