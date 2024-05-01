@@ -1,5 +1,5 @@
 
-module aes (input clk,output reg [127 : 0] out );
+module aes (input clk,output  [20 : 0] segment);
     wire [127:0] in = 128'h00112233445566778899aabbccddeeff;
     wire [127:0] key = 128'h000102030405060708090a0b0c0d0e0f;
 	integer i = -1;
@@ -23,13 +23,14 @@ module aes (input clk,output reg [127 : 0] out );
 			i = i + 1;
 		end
     end
-    // wire [7:0] bin = out[7:0];
-    // wire [11:0] bout;
-    // binarytoBCD B2B(bin , bout);
-	// wire [20:0]hexout;
-    // HexConverter HC0(bout[3:0] , hexout[6:0]);
-    // HexConverter HC1(bout[7:4] , hexout[13:7]);
-    // HexConverter HC2(bout[11:8], hexout[20:14]);
+    wire [7:0] bin = out[7:0];
+    wire [11:0] bout;
+    binarytoBCD B2B(bin , bout);
+	   wire [20:0]hexout;
+    HexConverter HC0(bout[3:0] , hexout[6:0]);
+    HexConverter HC1(bout[7:4] , hexout[13:7]);
+    HexConverter HC2(bout[11:8], hexout[20:14]);
+assign segment=hexout;
 endmodule
 
 module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [127 : 0] finalout);
