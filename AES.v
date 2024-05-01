@@ -2,7 +2,7 @@
 module AES (input clk,output reg [127 : 0] out , output [20:0] sevensegment);
     wire [127:0] in = 128'h00112233445566778899aabbccddeeff;
     wire [127:0] key = 128'h000102030405060708090a0b0c0d0e0f;
-    integer i =-1;
+	integer i = -1;
     wire [1407:0] words;
     wire [127:0] encrypted;
     wire [127:0] decrypted;
@@ -10,57 +10,60 @@ module AES (input clk,output reg [127 : 0] out , output [20:0] sevensegment);
     Cipher c1 (in,words,clk,i,encrypted);
     DeCipher dc1 (encrypted,words,clk,i,decrypted);
     always@(negedge clk) begin
-        if(i<10) begin
-             out <= encrypted;
-        end
-        else begin
-            out <= decrypted;
-        end
+		if(i<21) begin
+        	if(i<10) begin
+        	     out <= encrypted;
+        	end
+        	else begin
+        	    out <= decrypted;
+        	end
+			i = i + 1;
+		end
     end
-    wire [7:0] bin = out;
-    wire [11:0] bout = out;
+    wire [7:0] bin = out[7:0];
+    wire [11:0] bout;
     binarytoBCD B2B(bin , bout);
-    HexConverter HC0(bout[3:0] , sevensegment[6:0]);
-    HexConverter HC1(bout[7:4] , sevensegment[13:7]);
-    HexConverter HC2(bout[11:8], sevensegment[20:14]);
+	wire [20:0]hexout;
+    HexConverter HC0(bout[3:0] , hexout[6:0]);
+    HexConverter HC1(bout[7:4] , hexout[13:7]);
+    HexConverter HC2(bout[11:8], hexout[20:14]);
+	assign sevensegment = hexout;
 endmodule
 
-module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk ,input [4:0] ic,output reg [127 : 0] finalout);
+module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk , input [4:0] i,output reg [127 : 0] finalout);
    	wire [127 : 0] finalround;
     wire [127 : 0] sub;
     wire [127 : 0] shift;
-    //integer i=-1;
-	//reg [1407:0] states;
-	reg [127:0] currentstate;
+	reg [127:0] currentState;
     wire [127 : 0] midrounds;
 	wire [127:0] firstround;
     AddRoundKey addrk1 (in, w[1407 : 1280], firstround);
-	encryptRound er (currentstate ,w[1407-((i+1)*128)-:128],midrounds);
-	SubBytes sb(currentstate,sub);
+	encryptRound er (currentState ,w[1407-((i+1)*128)-:128],midrounds);
+	SubBytes sb(currentState,sub);
 	ShiftRows sr(sub,shift);
 	AddRoundKey addrk2(shift,w[127:0],finalround);
 
 
 	always @ (negedge clk) begin 
-		if(ic<10)begin 
-				if(ic==-1&& firstround !== 'bx)begin
-					currentstate<=firstround;
+		if(i<10)begin 
+				if(i==-1&& firstround !== 'bx)begin
+					currentState<=firstround;
 					finalout <= firstround;
-					ic=ic+1;
+					//i=i+1;
 				end
-				else if(ic<=8&& midrounds !== 'bx)begin
-						currentstate<=midrounds;
+				else if(i<=8&& midrounds !== 'bx)begin
+						currentState<=midrounds;
 						finalout <= midrounds;
-						ic=ic+1;
+						//i=i+1;
 					end 
-					else if(ic==9&& midrounds !== 'bx)begin
+					else if(i==9&& midrounds !== 'bx)begin
 						finalout <= finalround;
-                        //ic=ic+1;
 					end
 
 		end	
 	end
 endmodule
+
 module encryptRound(in,key,out);
 input [127:0] in;
 output [127:0] out;
@@ -79,7 +82,7 @@ assign out = keyout;
 endmodule
 
 module AddRoundKey(input [127:0] in,input[127:0] in2, output[127:0] out);
-    assign out=in2^in;
+assign out=in2^in;
 endmodule
 module KeyExpansion(input [127 : 0] key , output [1407 : 0] word);
  
@@ -87,9 +90,9 @@ module KeyExpansion(input [127 : 0] key , output [1407 : 0] word);
 
   genvar i;
   generate
-    for (i = 1; i <= 10; i = i + 1) begin:Key
+    for (i = 1; i <= 10; i = i + 1) begin: Key
       wire [31:0] G;
-      g g1 (word[1407 - (i-1)*128 - 96 : 1407 - (i-1)*128 - 127], i , G);
+      g getG (word[1407 - (i-1)*128 - 96 : 1407 - (i-1)*128 - 127], i , G);
       assign word[1407 - i*128	    : 1407 - i*128 - 31 ] = word[1407 - (i-1)*128	   : 1407 - (i-1)*128 - 31 ] ^ G;
       assign word[1407 - i*128 - 32 : 1407 - i*128 - 63 ] = word[1407 - (i-1)*128 - 32 : 1407 - (i-1)*128 - 63 ] ^ word[1407 - i*128	  : 1407 - i*128 - 31 ];
       assign word[1407 - i*128 - 64 : 1407 - i*128 - 95 ] = word[1407 - (i-1)*128 - 64 : 1407 - (i-1)*128 - 95 ] ^ word[1407 - i*128 - 32 : 1407 - i*128 - 63 ];
@@ -118,8 +121,8 @@ module g (input [31:0] x, input [3:0] rconi, output [31:0] out);
     wire [31:0] rconx;
     wire [31:0] subx;
 
-    subword s9 (shiftedx , subx);
-    getrcon r9 (rconi , rconx);
+    subword getsubword (shiftedx , subx);
+    getrcon GR1 (rconi , rconx);
     assign out = subx ^ rconx;
 endmodule
 
@@ -172,6 +175,45 @@ endgenerate
 
 endmodule
 
+
+module ShiftRows(input  [0:127] state_in ,  output  [0:127] state_out );
+
+//first row
+assign state_out[0:7] = state_in[0:7];
+assign state_out[32:39] = state_in[32:39];
+assign state_out[64:71] = state_in[64:71];
+assign state_out[96:103] = state_in[96:103];
+
+//second row
+assign state_out[8:15] = state_in[40:47];
+assign state_out[40:47] = state_in[72:79];
+assign state_out[72:79] = state_in[104:111];
+assign state_out[104:111] = state_in[8:15];
+
+//third row
+assign state_out[16:23] = state_in[80:87];
+assign state_out[48:55] = state_in[112:119];
+assign state_out[80:87] = state_in[16:23];
+assign state_out[112:119] = state_in[48:55];
+
+//forth row
+assign state_out[24:31] = state_in[120:127];
+assign state_out[56:63] = state_in[24:31];
+assign state_out[88:95] = state_in[56:63];
+assign state_out[120:127] = state_in[88:95];
+
+endmodule
+
+module SubBytes(input [127:0] in , output [127:0] out);
+genvar i;
+
+generate
+  for(i=0;i<16;i=i+1)begin : sub_bytes
+    sbox s16969(in[(i+1)*8-1:i*8],out[(i+1)*8-1:i*8]);
+    end
+endgenerate
+endmodule
+	
 module sbox(in,out);
 
 input  [7:0] in;
@@ -442,49 +484,10 @@ reg [7:0] c;
   assign out=c;
 endmodule
 
-module ShiftRows(input  [0:127] state_in ,  output  [0:127] state_out );
-
-//first row
-assign state_out[0:7] = state_in[0:7];
-assign state_out[32:39] = state_in[32:39];
-assign state_out[64:71] = state_in[64:71];
-assign state_out[96:103] = state_in[96:103];
-
-//second row
-assign state_out[8:15] = state_in[40:47];
-assign state_out[40:47] = state_in[72:79];
-assign state_out[72:79] = state_in[104:111];
-assign state_out[104:111] = state_in[8:15];
-
-//third row
-assign state_out[16:23] = state_in[80:87];
-assign state_out[48:55] = state_in[112:119];
-assign state_out[80:87] = state_in[16:23];
-assign state_out[112:119] = state_in[48:55];
-
-//forth row
-assign state_out[24:31] = state_in[120:127];
-assign state_out[56:63] = state_in[24:31];
-assign state_out[88:95] = state_in[56:63];
-assign state_out[120:127] = state_in[88:95];
-
-endmodule
-
-module SubBytes(input [127:0] in , output [127:0] out);
-genvar i;
-
-generate
-  for(i=0;i<16;i=i+1)begin : sub_bytes
-    sbox sb1(in[(i+1)*8-1:i*8],out[(i+1)*8-1:i*8]);
-    end
-endgenerate
-endmodule
-
-module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk ,input [5:0] i,output reg [127 : 0] finalout);
+module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk ,input [4:0] i ,output reg [127 : 0] finalout);
    	wire [127 : 0] finalround;
     wire [127 : 0] sub;
     wire [127 : 0] shift;
-    //integer i=-1;
 	reg [127:0] currentstate;
     wire [127 : 0] midrounds;
 	wire [127:0] firstround;
@@ -496,18 +499,18 @@ module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk ,input [5:0] 
 
 
 	always @ (negedge clk) begin 
-		if(i<21)begin 
-				if(i==10&& firstround !== 'bx)begin
+		if(i<10)begin 
+				if(i==-1&& firstround !== 'bx)begin
 					currentstate<=firstround;
 					finalout <= firstround;
-					i=i+1;
+					//i=i+1;
 				end
-				else if(i<=19&& midrounds !== 'bx)begin
+				else if(i<=8&& midrounds !== 'bx)begin
 						currentstate<=midrounds;
 						finalout <= midrounds;
-						i=i+1;
+						//i=i+1;
 					end 
-					else if(i==20&& midrounds !== 'bx)begin
+					else if(i==9&& midrounds !== 'bx)begin
 						finalout <= finalround;
 					end
 
@@ -583,12 +586,12 @@ genvar i;
 generate
 	
 for(i=0;i< 4;i=i+1) begin : m_col
+	assign state_out[i*32+:8]= mul14(state_in[i*32+:8]) ^ mul11(state_in[(i*32 + 8)+:8]) ^ mul13(state_in[(i*32 + 16)+:8])^ mul09(state_in[(i*32 + 24)+:8]);
+	assign state_out[(i*32 + 8)+:8]= mul09(state_in[i*32+:8]) ^ mul14(state_in[(i*32 + 8)+:8]) ^ mul11(state_in[(i*32 + 16)+:8]) ^ mul13(state_in[(i*32 + 24)+:8]);
+	assign state_out[(i*32 + 16)+:8]= mul13(state_in[i*32+:8])^ mul09(state_in[(i*32 + 8)+:8]) ^ mul14(state_in[(i*32 + 16)+:8]) ^ mul11(state_in[(i*32 + 24)+:8]);
+	assign state_out[(i*32 + 24)+:8]= mul11(state_in[i*32+:8]) ^ mul13(state_in[(i*32 + 8)+:8]) ^ mul09(state_in[(i*32 + 16)+:8]) ^ mul14(state_in[(i*32 + 24)+:8]);
 
-	assign state_out[i*32 + :8]		= mul14(state_in[i*32+:8]) ^ mul11(state_in[(i*32 + 8)+:8]) ^ mul13(state_in[(i*32 + 16)+:8]) ^ mul09(state_in[(i*32 + 24)+:8]);
-	assign state_out[(i*32 + 8)+:8]	= mul09(state_in[i*32+:8]) ^ mul14(state_in[(i*32 + 8)+:8]) ^ mul11(state_in[(i*32 + 16)+:8]) ^ mul13(state_in[(i*32 + 24)+:8]);
-	assign state_out[(i*32 + 16)+:8]= mul13(state_in[i*32+:8]) ^ mul09(state_in[(i*32 + 8)+:8]) ^ mul14(state_in[(i*32 + 16)+:8]) ^ mul11(state_in[(i*32 + 24)+:8]);
-   	assign state_out[(i*32 + 24)+:8]= mul11(state_in[i*32+:8]) ^ mul13(state_in[(i*32 + 8)+:8]) ^ mul09(state_in[(i*32 + 16)+:8]) ^ mul14(state_in[(i*32 + 24)+:8]);
-
+	
 end
 
 endgenerate
@@ -904,7 +907,6 @@ generate
 endgenerate
 endmodule
 
-
 module shift_add(input [0:3] in, output reg [0:3]out);
      always @(*) begin
     if (in >= 4'b0101) out = in + 4'b0011; // Add 3 if input is 5 or greater
@@ -942,7 +944,7 @@ endmodule
 
 module HexConverter (in, converted);
 	input [3:0] in;
-	output [6:0] converted;
+	output reg [6:0] converted;
     always
         begin
 	       case(in)
