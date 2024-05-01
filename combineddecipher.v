@@ -1,5 +1,5 @@
 
-module maind (input clk,output [127 : 0] out);
+module main (input clk,output [127 : 0] out);
     wire [127:0] in = 128'h69c4e0d86a7b0430d8cdb78070b4c55a;
     wire [127:0] key = 128'h000102030405060708090a0b0c0d0e0f;
     wire [1407:0] words;
@@ -71,7 +71,7 @@ module KeyExpansion(input [127 : 0] key , output [1407 : 0] word);
 
   genvar i;
   generate
-    for (i = 1; i <= 10; i = i + 1) begin
+    for (i = 1; i <= 10; i = i + 1) begin:key2222
       wire [31:0] G;
       g getG (word[1407 - (i-1)*128 - 96 : 1407 - (i-1)*128 - 127], i , G);
       assign word[1407 - i*128	    : 1407 - i*128 - 31 ] = word[1407 - (i-1)*128	   : 1407 - (i-1)*128 - 31 ] ^ G;
@@ -167,12 +167,12 @@ genvar i;
 generate
 	
 for(i=0;i< 4;i=i+1) begin : m_col
+	assign state_out[i*32+:8]= mul14(state_in[i*32+:8]) ^ mul11(state_in[(i*32 + 8)+:8]) ^ mul13(state_in[(i*32 + 16)+:8])^ mul09(state_in[(i*32 + 24)+:8]);
+	assign state_out[(i*32 + 8)+:8]= mul09(state_in[i*32+:8]) ^ mul14(state_in[(i*32 + 8)+:8]) ^ mul11(state_in[(i*32 + 16)+:8]) ^ mul13(state_in[(i*32 + 24)+:8]);
+	assign state_out[(i*32 + 16)+:8]= mul13(state_in[i*32+:8])^ mul09(state_in[(i*32 + 8)+:8]) ^ mul14(state_in[(i*32 + 16)+:8]) ^ mul11(state_in[(i*32 + 24)+:8]);
+	assign state_out[(i*32 + 24)+:8]= mul11(state_in[i*32+:8]) ^ mul13(state_in[(i*32 + 8)+:8]) ^ mul09(state_in[(i*32 + 16)+:8]) ^ mul14(state_in[(i*32 + 24)+:8]);
 
-	assign state_out[i*32 + :8]		= mul14(state_in[i*32+:8]) ^ mul11(state_in[(i*32 + 8)+:8]) ^ mul13(state_in[(i*32 + 16)+:8]) ^ mul09(state_in[(i*32 + 24)+:8]);
-	assign state_out[(i*32 + 8)+:8]	= mul09(state_in[i*32+:8]) ^ mul14(state_in[(i*32 + 8)+:8]) ^ mul11(state_in[(i*32 + 16)+:8]) ^ mul13(state_in[(i*32 + 24)+:8]);
-	assign state_out[(i*32 + 16)+:8]= mul13(state_in[i*32+:8]) ^ mul09(state_in[(i*32 + 8)+:8]) ^ mul14(state_in[(i*32 + 16)+:8]) ^ mul11(state_in[(i*32 + 24)+:8]);
-   	assign state_out[(i*32 + 24)+:8]= mul11(state_in[i*32+:8]) ^ mul13(state_in[(i*32 + 8)+:8]) ^ mul09(state_in[(i*32 + 16)+:8]) ^ mul14(state_in[(i*32 + 24)+:8]);
-
+	
 end
 
 endgenerate
@@ -756,5 +756,3 @@ reg [7:0] c;
    end
   assign out=c;
 endmodule
-
-
