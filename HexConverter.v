@@ -1,6 +1,6 @@
 module HexConverter (in, converted);
 	input [3:0] in;
-	output [6:0] converted;
+	output reg [6:0] converted;
     always
         begin
 	       case(in)
