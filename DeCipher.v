@@ -1,11 +1,11 @@
-module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [127 : 0] finalout);
+module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk,input enable ,output reg [127 : 0] finalout);
    	wire [127 : 0] finalround;
     wire [127 : 0] sub;
     wire [127 : 0] shift;
-    integer i=-1;
 	reg [127:0] currentstate;
     wire [127 : 0] midrounds;
 	wire [127:0] firstround;
+    integer i=-1;
     AddRoundKey addrk3 (in, w[127 : 0], firstround);
 	decryptRound dr (currentstate ,w[(((i+2)*128)-1)-:128],midrounds);
 	InvShiftRows isr(currentstate,shift);
@@ -14,7 +14,7 @@ module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [
 
 
 	always @ (negedge clk) begin 
-		if(i<10)begin 
+		if(i<10 && enable)begin 
 				if(i==-1&& firstround !== 'bx)begin
 					currentstate<=firstround;
 					finalout <= firstround;

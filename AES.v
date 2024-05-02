@@ -1,52 +1,53 @@
-
-module aes (input clk,output[20:0]segment );
+module aes (input clk,output[6:0]HEX0,output[6:0]HEX1,output[6:0]HEX2,output Equal);
     wire [127:0] in = 128'h00112233445566778899aabbccddeeff;
     wire [127:0] key = 128'h000102030405060708090a0b0c0d0e0f;
-	integer i = -1;
-	wire [127:0] out;
+    integer i = -1;
+    wire [127:0] out;
     wire [1407:0] words;
     wire [127:0] encrypted;
-	reg [127:0] decryptEnter;
+	  reg enable   = 0;
     wire [127:0] decrypted;
     KeyExpansion k1 (key,words);
     Cipher c1 (in,words,clk,encrypted);
-    DeCipher dc1 (decryptEnter,words,clk,decrypted);
-	assign out=(i<11)?encrypted:decrypted;
+    DeCipher dc1 (encrypted,words,clk,enable,decrypted);
+    assign out=(i<11)?encrypted:decrypted;
     always@(negedge clk) begin
-		if(i<22) begin
-        	if(i<11 ) begin
-				 if(i==9)
-				 	decryptEnter=encrypted;
-        	end
-			i = i + 1;
-		end
-    end
- 	 wire [7:0] bin = out[7:0];
-     wire [11:0] bout;
-     binarytoBCD B2B(bin , bout);
-	 wire [20:0]hexout;
-     HexConverter HC0(bout[3:0] , hexout[6:0]);
-     HexConverter HC1(bout[7:4] , hexout[13:7]);
-     HexConverter HC2(bout[11:8], hexout[20:14]);
-	 assign segment=hexout;
+        if(i<22) begin
+                 if(i==9)begin
+					enable = 1;
+				 end
+            end
+            i = i + 1;
+        end
+    wire [7:0] bin = (i == -1) ? in[7:0] : out[7:0];
+    wire [11:0] bout;
+    binarytoBCD B2B(bin , bout);
+    wire [20:0]hexout;
+    HexConverter HC0(bout[3:0] , hexout[6:0]);
+    HexConverter HC1(bout[7:4] , hexout[13:7]);
+    HexConverter HC2(bout[11:8], hexout[20:14]);
+    assign HEX0 =hexout[6:0];
+    assign HEX1 =hexout[13:7];
+    assign HEX2 =hexout[20:14];
+	  assign Equal = (in==out)? 1:0;
 endmodule
 
 module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [127 : 0] finalout);
    	wire [127 : 0] finalround;
     wire [127 : 0] sub;
     wire [127 : 0] shift;
-	reg [127:0] currentState;
+	  reg [127:0] currentState;
     wire [127 : 0] midrounds;
-	wire [127:0] firstround;
+	  wire [127:0] firstround;
     integer i=-1;
     AddRoundKey addrk1 (in, w[1407 : 1280], firstround);
-	encryptRound er (currentState ,w[1407-((i+1)*128)-:128],midrounds);
-	SubBytes sb(currentState,sub);
-	ShiftRows sr(sub,shift);
-	AddRoundKey addrk2(shift,w[127:0],finalround);
+	  encryptRound er (currentState ,w[1407-((i+1)*128)-:128],midrounds);
+	  SubBytes sb(currentState,sub);
+	  ShiftRows sr(sub,shift);
+  	AddRoundKey addrk2(shift,w[127:0],finalround);
 
 
-	always @ (posedge clk) begin 
+	always @ (negedge clk) begin 
 		if(i<10)begin 
 				if(i==-1&& firstround !== 'bx)begin
 					currentState<=firstround;
@@ -66,7 +67,7 @@ module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [12
 	end
 endmodule
 
-module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk  ,output reg [127 : 0] finalout);
+module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk,input enable ,output reg [127 : 0] finalout);
    	wire [127 : 0] finalround;
     wire [127 : 0] sub;
     wire [127 : 0] shift;
@@ -75,14 +76,14 @@ module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk  ,output reg 
 	wire [127:0] firstround;
     integer i=-1;
     AddRoundKey addrk3 (in, w[127 : 0], firstround);
-	decryptRound dr (currentstate ,w[(((i+2)*128)-1)-:128],midrounds);
-	InvShiftRows isr(currentstate,shift);
-	invSubBytes isb(shift,sub);
-	AddRoundKey addrk4 (sub,w[1407:1280],finalround);
+	  decryptRound dr (currentstate ,w[(((i+2)*128)-1)-:128],midrounds);
+	  InvShiftRows isr(currentstate,shift);
+	  invSubBytes isb(shift,sub);
+	  AddRoundKey addrk4 (sub,w[1407:1280],finalround);
 
 
 	always @ (negedge clk) begin 
-		if(i<10)begin 
+		if(i<10 && enable)begin 
 				if(i==-1&& firstround !== 'bx)begin
 					currentstate<=firstround;
 					finalout <= firstround;
@@ -952,22 +953,22 @@ module HexConverter (in, converted);
     always @(*)
         begin
 	       case(in)
-            4'h0: converted[6:0] = 7'b0111111;
-            4'h1: converted[6:0] = 7'b0000110;
-            4'h2: converted[6:0] = 7'b1011011;
-            4'h3: converted[6:0] = 7'b1001111;
-            4'h4: converted[6:0] = 7'b1100110;
-            4'h5: converted[6:0] = 7'b1101101;
-            4'h6: converted[6:0] = 7'b1111101;
-            4'h7: converted[6:0] = 7'b0000111;
-            4'h8: converted[6:0] = 7'b1111111;
-            4'h9: converted[6:0] = 7'b1101111;
-            4'hA: converted[6:0] = 7'b1110111;
-            4'hB: converted[6:0] = 7'b1111100;
-            4'hC: converted[6:0] = 7'b1011000;
-            4'hD: converted[6:0] = 7'b1011110;
-            4'hE: converted[6:0] = 7'b1111001;
-            default : converted[6:0] = 7'b1110001;
+            4'h0: converted[6:0] = 7'b1000000;
+            4'h1: converted[6:0] = 7'b1111001;
+            4'h2: converted[6:0] = 7'b0100100;
+            4'h3: converted[6:0] = 7'b0110000;
+            4'h4: converted[6:0] = 7'b0011001;
+            4'h5: converted[6:0] = 7'b0010010;
+            4'h6: converted[6:0] = 7'b0000010;
+            4'h7: converted[6:0] = 7'b1111000;
+            4'h8: converted[6:0] = 7'b0000000;
+            4'h9: converted[6:0] = 7'b0010000;
+            4'hA: converted[6:0] = 7'b0001000;
+            4'hB: converted[6:0] = 7'b0000011;
+            4'hC: converted[6:0] = 7'b0100111;
+            4'hD: converted[6:0] = 7'b0100001;
+            4'hE: converted[6:0] = 7'b0000110;
+            default : converted[6:0] = 7'b0001110;
            endcase
         end
 endmodule

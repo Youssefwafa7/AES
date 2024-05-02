@@ -2,10 +2,10 @@ module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [12
    	wire [127 : 0] finalround;
     wire [127 : 0] sub;
     wire [127 : 0] shift;
-    integer i=-1;
 	reg [127:0] currentState;
     wire [127 : 0] midrounds;
 	wire [127:0] firstround;
+    integer i=-1;
     AddRoundKey addrk1 (in, w[1407 : 1280], firstround);
 	encryptRound er (currentState ,w[1407-((i+1)*128)-:128],midrounds);
 	SubBytes sb(currentState,sub);
@@ -17,7 +17,7 @@ module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [12
 		if(i<10)begin 
 				if(i==-1&& firstround !== 'bx)begin
 					currentState<=firstround;
-					finalout <= firstround;
+					finalout = firstround;
 					i=i+1;
 				end
 				else if(i<=8&& midrounds !== 'bx)begin
