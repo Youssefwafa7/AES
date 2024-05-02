@@ -6,7 +6,6 @@ module AES (input clk,output[6:0]HEX0,output[6:0]HEX1,output[6:0]HEX2,output Equ
     wire [1407:0] words;
     wire [127:0] encrypted;
 	reg enable   = 0;
-    // reg [127:0] decryptEnter;
     wire [127:0] decrypted;
     KeyExpansion k1 (key,words);
     Cipher c1 (in,words,clk,encrypted);
