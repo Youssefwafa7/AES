@@ -5,8 +5,7 @@ module aes (input clk,output[6:0]HEX0,output[6:0]HEX1,output[6:0]HEX2,output Equ
     wire [127:0] out;
     wire [1407:0] words;
     wire [127:0] encrypted;
-	reg enable   = 0;
-    // reg [127:0] decryptEnter;
+	  reg enable   = 0;
     wire [127:0] decrypted;
     KeyExpansion k1 (key,words);
     Cipher c1 (in,words,clk,encrypted);
@@ -30,22 +29,22 @@ module aes (input clk,output[6:0]HEX0,output[6:0]HEX1,output[6:0]HEX2,output Equ
     assign HEX0 =hexout[6:0];
     assign HEX1 =hexout[13:7];
     assign HEX2 =hexout[20:14];
-	assign Equal = (in==out)? 1:0;
+	  assign Equal = (in==out)? 1:0;
 endmodule
 
 module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [127 : 0] finalout);
    	wire [127 : 0] finalround;
     wire [127 : 0] sub;
     wire [127 : 0] shift;
-	reg [127:0] currentState;
+	  reg [127:0] currentState;
     wire [127 : 0] midrounds;
-	wire [127:0] firstround;
+	  wire [127:0] firstround;
     integer i=-1;
     AddRoundKey addrk1 (in, w[1407 : 1280], firstround);
-	encryptRound er (currentState ,w[1407-((i+1)*128)-:128],midrounds);
-	SubBytes sb(currentState,sub);
-	ShiftRows sr(sub,shift);
-	AddRoundKey addrk2(shift,w[127:0],finalround);
+	  encryptRound er (currentState ,w[1407-((i+1)*128)-:128],midrounds);
+	  SubBytes sb(currentState,sub);
+	  ShiftRows sr(sub,shift);
+  	AddRoundKey addrk2(shift,w[127:0],finalround);
 
 
 	always @ (negedge clk) begin 
@@ -77,10 +76,10 @@ module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk,input enable 
 	wire [127:0] firstround;
     integer i=-1;
     AddRoundKey addrk3 (in, w[127 : 0], firstround);
-	decryptRound dr (currentstate ,w[(((i+2)*128)-1)-:128],midrounds);
-	InvShiftRows isr(currentstate,shift);
-	invSubBytes isb(shift,sub);
-	AddRoundKey addrk4 (sub,w[1407:1280],finalround);
+	  decryptRound dr (currentstate ,w[(((i+2)*128)-1)-:128],midrounds);
+	  InvShiftRows isr(currentstate,shift);
+	  invSubBytes isb(shift,sub);
+	  AddRoundKey addrk4 (sub,w[1407:1280],finalround);
 
 
 	always @ (negedge clk) begin 
