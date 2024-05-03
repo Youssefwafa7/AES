@@ -1,4 +1,4 @@
-module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk,input enable ,output reg [127 : 0] finalout);
+module DeCipher#(parameter Nk = 4 ,parameter Nr = 10)(input [127 : 0] in, input [(Nr+1)*128-1 : 0] w , input clk,input enable ,output reg [127 : 0] finalout);
    	wire [127 : 0] finalround;
     wire [127 : 0] sub;
     wire [127 : 0] shift;
@@ -7,25 +7,25 @@ module DeCipher(input [127 : 0] in, input [1407 : 0] w , input clk,input enable 
 	wire [127:0] firstround;
     integer i=-1;
     AddRoundKey addrk3 (in, w[127 : 0], firstround);
-	decryptRound dr (currentstate ,w[(((i+2)*128)-1)-:128],midrounds);
-	InvShiftRows isr(currentstate,shift);
-	invSubBytes isb(shift,sub);
-	AddRoundKey addrk4 (sub,w[1407:1280],finalround);
+	  decryptRound dr (currentstate ,w[(((i+2)*128)-1)-:128],midrounds);
+	  InvShiftRows isr(currentstate,shift);
+	  invSubBytes isb(shift,sub);
+	  AddRoundKey addrk4 (sub,w[(Nr+1)*128-1-:128],finalround);
 
 
 	always @ (negedge clk) begin 
-		if(i<10 && enable)begin 
+		if(i<Nr && enable)begin 
 				if(i==-1&& firstround !== 'bx)begin
 					currentstate<=firstround;
 					finalout <= firstround;
 					i=i+1;
 				end
-				else if(i<=8&& midrounds !== 'bx)begin
+				else if(i<=Nr-2&& midrounds !== 'bx)begin
 						currentstate<=midrounds;
 						finalout <= midrounds;
 						i=i+1;
 					end 
-					else if(i==9&& midrounds !== 'bx)begin
+					else if(i==Nr-1&& midrounds !== 'bx)begin
 						finalout <= finalround;
 					end
 

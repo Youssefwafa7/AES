@@ -4,15 +4,15 @@ module KeyExpansion #(parameter Nk = 4 ,parameter Nr = 10)(input [Nk*32-1: 0] ke
   reg [31:0] shiftedx;
   reg [31:0] rconx;
   reg [31:0] subx;
-  genvar j;
-  generate
-  for(j = 0 ; j < Nk ; j = j + 1) begin
-     assign  word_array[j] = key[(Nk*32-1) - 32*j -:32];
-  end
-  endgenerate
-  integer i;
+
+  integer i,j;
   always@ (*) begin
-    for(i = Nk; i < 4*(Nr + 1); i = i + 1) begin
+	 
+  	for(j = 0 ; j < Nk ; j = j + 1) begin:Keyj
+     	word_array[j] = key[(Nk*32-1) - 32*j -:32];
+ 	 end
+
+    for(i = Nk; i < 4*(Nr + 1); i = i + 1) begin:Keyi
         temp = word_array[i-1];
         if(i % Nk == 0) begin 
          shiftedx = shift(temp);
@@ -29,7 +29,7 @@ module KeyExpansion #(parameter Nk = 4 ,parameter Nr = 10)(input [Nk*32-1: 0] ke
 
 genvar z;
 generate
- for (z = 0 ; z < 4 * (Nr+1) ; z = z + 1) begin
+ for (z = 0 ; z < 4 * (Nr+1) ; z = z + 1) begin:Keyz
     assign words[(Nr+1)*128-1 -32*z -:32] = word_array[z];
   end
 endgenerate
