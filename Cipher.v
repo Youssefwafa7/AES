@@ -1,4 +1,4 @@
-module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [127 : 0] finalout);
+module Cipher#(parameter Nk = 4 ,parameter Nr = 10)(input [127 : 0] in, input [(Nr+1)*128-1 : 0] w , input clk ,output reg [127 : 0] finalout);
    	wire [127 : 0] finalround;
     wire [127 : 0] sub;
     wire [127 : 0] shift;
@@ -6,26 +6,26 @@ module Cipher(input [127 : 0] in, input [1407 : 0] w , input clk ,output reg [12
     wire [127 : 0] midrounds;
 	wire [127:0] firstround;
     integer i=-1;
-    AddRoundKey addrk1 (in, w[1407 : 1280], firstround);
-	encryptRound er (currentState ,w[1407-((i+1)*128)-:128],midrounds);
+    AddRoundKey addrk1 (in, w[(Nr+1)*128-1 -: 128], firstround);
+	encryptRound er (currentState ,w[(Nr+1)*128-1-((i+1)*128)-:128],midrounds);
 	SubBytes sb(currentState,sub);
 	ShiftRows sr(sub,shift);
-	AddRoundKey addrk2(shift,w[127:0],finalround);
+  	AddRoundKey addrk2(shift,w[127:0],finalround);
 
 
 	always @ (negedge clk) begin 
-		if(i<10)begin 
+		if(i<Nr)begin 
 				if(i==-1&& firstround !== 'bx)begin
 					currentState<=firstround;
 					finalout = firstround;
 					i=i+1;
 				end
-				else if(i<=8&& midrounds !== 'bx)begin
+				else if(i<=Nr-2&& midrounds !== 'bx)begin
 						currentState<=midrounds;
 						finalout <= midrounds;
 						i=i+1;
 					end 
-					else if(i==9&& midrounds !== 'bx)begin
+					else if(i==Nr-1&& midrounds !== 'bx)begin
 						finalout <= finalround;
 					end
 

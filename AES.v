@@ -1,5 +1,5 @@
 
-module aes(input clk,input [2:0]SW,output[6:0]HEX0,output[6:0]HEX1,output[6:0]HEX2,output Equal);
+module aes(input clk,input [1:0]SW,output[6:0]HEX0,output[6:0]HEX1,output[6:0]HEX2,output Equal);
     wire [127:0] in = 128'h00112233445566778899aabbccddeeff;
     wire [127:0] key128 = 128'h000102030405060708090a0b0c0d0e0f;
     wire [191:0] key192 = 192'h000102030405060708090a0b0c0d0e0f1011121314151617;
@@ -17,39 +17,30 @@ module aes(input clk,input [2:0]SW,output[6:0]HEX0,output[6:0]HEX1,output[6:0]HE
     wire [127:0] encrypted128;
     wire [127:0] encrypted192;
     wire [127:0] encrypted256;
-	  reg enable   = 0;
+	reg enable = 0;
     integer i = -1;
-    integer Nr;
-    always @(*) begin
-        if (SW[0]) begin
-            Nr=10;
-        end
-        else if (SW[1]) begin
+    integer Nr=10;
+     always @(*) begin
+       	if (SW[0]) begin
             Nr=12;
-        end
-        else if (SW[2]) begin
+         end
+        else if (SW[1]) begin
             Nr=14;
         end
-        else begin
-            Nr=10;
-        end
     end
-    KeyExpansion #(4,10) k1 (key128,words128);
-    KeyExpansion #(6,12) k2 (key192,words192);
-    KeyExpansion #(8,14) k3 (key256,words256);
-    Cipher #(4,10) c1 (in,words128,clk,encrypted128);
-    Cipher #(6,12) c2 (in,words192,clk,encrypted192);
-    Cipher #(8,14) c3 (in,words256,clk,encrypted256);
-    DeCipher #(4,10) dc1 (encrypted128,words128,clk,enable,decrypted128);
-    DeCipher #(6,12) dc2 (encrypted192,words192,clk,enable,decrypted192);
-    DeCipher #(8,14) dc3 (encrypted256,words256,clk,enable,decrypted256);
+    KeyExpansion #(4,10) k10985 (key128,words128);
+    KeyExpansion #(6,12) k223412we (key192,words192);
+    KeyExpansion #(8,14) k3234sa (key256,words256);
+    Cipher #(4,10) c1234sad (in,words128,clk,encrypted128);
+    Cipher #(6,12) c2234ad (in,words192,clk,encrypted192);
+    Cipher #(8,14) c32134sdf (in,words256,clk,encrypted256);
+    DeCipher #(4,10) dc1234asf (encrypted128,words128,clk,enable,decrypted128);
+    DeCipher #(6,12) dc2234sdf (encrypted192,words192,clk,enable,decrypted192);
+  	DeCipher #(8,14) dc324sdf (encrypted256,words256,clk,enable,decrypted256);
     assign out128=(i<Nr+1)?encrypted128:decrypted128;
     assign out192=(i<Nr+1)?encrypted192:decrypted192;
-    assign out256=(i<Nr+1)?encrypted256:decrypted256;
-    assign out=(Nr==10)?out128:0;
-    assign out=(Nr==12)?out192:0;
-    assign out=(Nr==14)?out256:0;
-
+   	assign out256=(i<Nr+1)?encrypted256:decrypted256;
+    assign out=(Nr==10)?out128:(Nr==12)?out192:(Nr==14)?out256:127'bx;
     always@(negedge clk) begin
         if(i<2*(Nr+1)) begin
                  if(i==Nr-1)begin
@@ -68,21 +59,21 @@ module aes(input clk,input [2:0]SW,output[6:0]HEX0,output[6:0]HEX1,output[6:0]HE
     assign HEX0 =hexout[6:0];
     assign HEX1 =hexout[13:7];
     assign HEX2 =hexout[20:14];
-	  assign Equal = (in==out)? 1:0;
+	assign Equal = (in==out)? 1:0;
 endmodule
 
 module Cipher#(parameter Nk = 4 ,parameter Nr = 10)(input [127 : 0] in, input [(Nr+1)*128-1 : 0] w , input clk ,output reg [127 : 0] finalout);
    	wire [127 : 0] finalround;
     wire [127 : 0] sub;
     wire [127 : 0] shift;
-	  reg [127:0] currentState;
+	reg [127:0] currentState;
     wire [127 : 0] midrounds;
-	  wire [127:0] firstround;
+	wire [127:0] firstround;
     integer i=-1;
     AddRoundKey addrk1 (in, w[(Nr+1)*128-1 -: 128], firstround);
 	encryptRound er (currentState ,w[(Nr+1)*128-1-((i+1)*128)-:128],midrounds);
-	  SubBytes sb(currentState,sub);
-	  ShiftRows sr(sub,shift);
+	SubBytes sb(currentState,sub);
+	ShiftRows sr(sub,shift);
   	AddRoundKey addrk2(shift,w[127:0],finalround);
 
 
@@ -162,21 +153,22 @@ module AddRoundKey(input [127:0] in,input[127:0] in2, output[127:0] out);
 assign out=in2^in;
 endmodule
 
+
 module KeyExpansion #(parameter Nk = 4 ,parameter Nr = 10)(input [Nk*32-1: 0] key , output [(Nr+1)*128-1:0] words);
   reg [31:0] word_array [0:4*(Nr+1)];
   reg [31:0]temp ;
   reg [31:0] shiftedx;
   reg [31:0] rconx;
   reg [31:0] subx;
-  genvar j;
-  generate
-  for(j = 0 ; j < Nk ; j = j + 1) begin
-     assign  word_array[j] = key[(Nk*32-1) - 32*j -:32];
-  end
-  endgenerate
-  integer i;
+
+  integer i,j;
   always@ (*) begin
-    for(i = Nk; i < 4*(Nr + 1); i = i + 1) begin
+	 
+  	for(j = 0 ; j < Nk ; j = j + 1) begin:Keyj
+     	word_array[j] = key[(Nk*32-1) - 32*j -:32];
+ 	 end
+
+    for(i = Nk; i < 4*(Nr + 1); i = i + 1) begin:Keyi
         temp = word_array[i-1];
         if(i % Nk == 0) begin 
          shiftedx = shift(temp);
@@ -193,7 +185,7 @@ module KeyExpansion #(parameter Nk = 4 ,parameter Nr = 10)(input [Nk*32-1: 0] ke
 
 genvar z;
 generate
- for (z = 0 ; z < 4 * (Nr+1) ; z = z + 1) begin
+ for (z = 0 ; z < 4 * (Nr+1) ; z = z + 1) begin:Keyz
     assign words[(Nr+1)*128-1 -32*z -:32] = word_array[z];
   end
 endgenerate
@@ -496,6 +488,8 @@ begin
 end
 endfunction
 endmodule
+
+
 
 
 module mixColumns(state_in,state_out);
