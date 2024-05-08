@@ -19,13 +19,13 @@ module aes(input clk,input [1:0]SW,input reset,output[6:0]HEX0,output[6:0]HEX1,o
 	reg enable = 0;
     integer i = -1;
     integer Nr=10;
-     always @(*) begin
-       	if (SW[0]) begin
+     always @(SW) begin
+       	if (SW==1) begin
             Nr=12;
          end
-        else if (SW[1]) begin
+        else if (SW==2) begin
             Nr=14;
-        end
+        end else Nr=10;
     end
     KeyExpansion #(4,10) k10985 (key128,words128);
     KeyExpansion #(6,12) k223412we (key192,words192);
@@ -43,6 +43,7 @@ module aes(input clk,input [1:0]SW,input reset,output[6:0]HEX0,output[6:0]HEX1,o
     always@(negedge clk, posedge reset) begin
 		if(reset) begin 
 			i = -1;
+			enable=0;
 		end
         else if(i<2*(Nr+1)) begin
                  if(i==Nr-1)begin
