@@ -1,4 +1,4 @@
-module aes(input clk,input [1:0]SW,input reset,output[6:0]HEX0,output[6:0]HEX1,output[6:0]HEX2,output Equal);
+module aes(input clk,input [1:0]SW,input reset,output[6:0]HEX0,output[6:0]HEX1,output[6:0]HEX2,output Equal,output reg [2:0]LEDR);
 	wire [127:0] in = 128'h00112233445566778899aabbccddeeff;
 	wire [127:0] key128 = 128'h000102030405060708090a0b0c0d0e0f;
 	wire [191:0] key192 = 192'h000102030405060708090a0b0c0d0e0f1011121314151617;
@@ -24,11 +24,14 @@ module aes(input clk,input [1:0]SW,input reset,output[6:0]HEX0,output[6:0]HEX1,o
      always @(*) begin
        	if (SW==1) begin
             Nr=12;
+			LEDR[2:0]=2;
          end
         else if (SW==2) begin
             Nr=14;
+			LEDR[2:0]=4;
 		end else begin 
 			Nr=10;
+			LEDR[2:0]=1;
     end
 	end
     KeyExpansion #(4,10) k10985 (key128,words128);
@@ -51,7 +54,7 @@ module aes(input clk,input [1:0]SW,input reset,output[6:0]HEX0,output[6:0]HEX1,o
 			enable192=0;
 			enable256=0;
 		end
-        else if(i<30)) begin
+        else if(i<30) begin
                  if(i==9)begin
 					enable128 = 1;
 				 end
